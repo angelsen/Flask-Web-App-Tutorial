@@ -1,0 +1,14 @@
+{% extends "base.html" %} 
+
+{% block content %}
+<h1>Welcome, {{ user.username }}!</h1>
+<p>Name: {{ user.username }}</p>
+<p>Email: {{ user.email }}</p>
+<p>NFC ID: {{ user.nfc_uid or "Not Set" }}</p>
+
+<form action="{{ url_for('views.add_nfc_card') }}" method="post">
+    <button type="submit" class="btn btn-primary">Scan NFC Card</button>
+</form>
+
+<!-- Any other user-specific content can go here -->
+{% endblock %}

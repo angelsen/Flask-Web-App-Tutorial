@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
-from . import db   ##means from __init__.py import db
+from . import db  # means from __init__.py import db
 from flask_login import login_user, login_required, logout_user, current_user
+from .nfc_util import get_nfc_uid_from_reader
 
 
 auth = Blueprint('auth', __name__)
@@ -42,6 +43,9 @@ def sign_up():
         first_name = request.form.get('firstName')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
+        nfcId = request.form.get('nfcId')
+
+        print(nfcId)
 
         user = User.query.filter_by(email=email).first()
         if user:
@@ -64,3 +68,19 @@ def sign_up():
             return redirect(url_for('views.home'))
 
     return render_template("sign_up.html", user=current_user)
+
+
+@auth.route('/nfc-login', methods=['GET'])
+def nfc_login():
+    nfc_uid = get_nfc_uid_from_reader()
+
+    print(nfc_uid)
+
+    user = User.query.filter_by(nfc_uid=nfc_uid).first()
+    if user:
+        login_user(user)
+        flash('Logged in successfully!', category='success')
+        return redirect(url_for('views.home'))
+    else:
+        flash('NFC card not recognized!', category='error')
+        return redirect(url_for('auth.login'))
