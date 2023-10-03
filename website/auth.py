@@ -3,7 +3,8 @@ from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db  # means from __init__.py import db
 from flask_login import login_user, login_required, logout_user, current_user
-from .nfc_util import get_nfc_uid_from_reader
+#from .nfc_util import get_nfc_uid_from_reader
+from .nfc_util_NXP import get_nfc_uid_from_reader
 
 
 auth = Blueprint('auth', __name__)

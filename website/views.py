@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 from .models import Note
 from . import db
 import json
-from .nfc_util import get_nfc_uid_from_reader
+#from .nfc_util import get_nfc_uid_from_reader
+from .nfc_util_NXP import get_nfc_uid_from_reader
 
 views = Blueprint('views', __name__)
 
