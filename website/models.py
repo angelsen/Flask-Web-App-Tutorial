@@ -25,3 +25,19 @@ class Note(db.Model):
     __table_args__ = (
         ForeignKeyConstraint([user_id], [User.id], name='fk_note_user_id'),
     )
+
+class FilamentInventory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sku = db.Column(db.String(150), unique=True)  # SKU from the barcode
+    weight = db.Column(db.Float)  # Weight in grams or any unit you prefer
+
+    __table_args__ = (
+        UniqueConstraint('sku', name='uq_filament_inventory_sku'),
+    )
+
+class CurrentSKU(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sku = db.Column(db.String(150), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f'<CurrentSKU {self.sku}>'

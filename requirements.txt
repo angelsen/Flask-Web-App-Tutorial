@@ -1,5 +1,9 @@
-Flask==2.3.0
+Flask
 Flask-SQLAlchemy
 flask-login
 flask_migrate
 git+https://github.com/angelsen/pn7150_reader.git#egg=pn7150_reader
+opencv-python
+pyzbar
+pyzbar[scripts]
+pillow

@@ -1,7 +1,7 @@
 from smartcard.CardMonitoring import CardMonitor, CardObserver
 from smartcard.util import toHexString
 from smartcard.Exceptions import CardConnectionException
-from controlvault2_nfc_enable import nfc
+#from controlvault2_nfc_enable import nfc
 
 # APDU for getting UID of MIFARE card
 GET_UID_APDU = [0xFF, 0xCA, 0x00, 0x00, 0x00]

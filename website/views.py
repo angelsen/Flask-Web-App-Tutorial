@@ -1,12 +1,17 @@
-from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for, Response, current_app
 from flask_login import login_required, current_user
-from .models import Note
+from .models import Note, FilamentInventory
 from . import db
 import json
-#from .nfc_util import get_nfc_uid_from_reader
 from .nfc_util_NXP import get_nfc_uid_from_reader
+import cv2
+from pyzbar.pyzbar import decode
+from sqlalchemy.exc import IntegrityError
 
 views = Blueprint('views', __name__)
+camera_id = 0
+cap = None
+last_scanned_sku = None
 
 
 @views.route('/', methods=['GET', 'POST'])
@@ -63,16 +68,76 @@ def add_nfc_card():
 def inventory():
     return render_template('inventory.html', user=current_user)
 
-@views.route('/handle-qr-code', methods=['POST'])
-@login_required
-def handle_qr_code():
-    data = request.json
-    qr_code = data.get('qrCode')
+@views.route('/start_camera')
+def start_camera():
+    global cap
+    cap = cv2.VideoCapture(camera_id)
+    return '', 204  # Return an empty response with a 204 status code
 
-    print(qr_code)
+@views.route('/stop_camera')
+def stop_camera():
+    global cap
+    if cap:
+        cap.release()
+        cap = None
+    return '', 204
 
-    # Handle the QR code as needed
-    # For example, you might want to search an inventory database, 
-    # log the scan, etc.
+def draw_barcode_frame(frame, barcode, text):
+    """Function to draw barcode rectangle and text on the frame."""
+    frame = cv2.rectangle(frame, (barcode.rect.left, barcode.rect.top),
+                          (barcode.rect.left + barcode.rect.width, barcode.rect.top + barcode.rect.height), (0, 255, 0), 3)
+    frame = cv2.putText(frame, text, (barcode.rect.left, barcode.rect.top + barcode.rect.height),
+                        cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2, cv2.LINE_AA)
+    return frame
 
-    return jsonify({"message": "QR code received", "qrCode": qr_code})
+@views.route('/video_feed')
+def video_feed():
+    def gen_frames():
+        global last_scanned_sku
+        global cap
+        while True:
+            if cap and cap.isOpened():
+                ret, frame = cap.read()
+                if ret:
+                    for d in decode(frame):
+                        s = d.data.decode()
+                        last_scanned_sku = s  # Update the last scanned SKU
+                        frame = draw_barcode_frame(frame, d, s)
+                    encoded_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+                    yield b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + encoded_frame + b'\r\n\r\n'
+                else:
+                    print('Error reading frame')
+                    break
+            else:
+                print('Exit the loop, camera is not open')
+                break
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@views.route('/update_weight', methods=['POST'])
+def update_weight():
+    global last_scanned_sku
+    data = request.get_json()
+    weight = data.get('weight')
+
+    if last_scanned_sku:
+        sku = last_scanned_sku
+
+        filament = FilamentInventory.query.filter_by(sku=sku).first()
+
+        if not filament:
+            # Create a new entry if SKU does not exist
+            filament = FilamentInventory(sku=sku, weight=weight)
+            db.session.add(filament)
+        else:
+            # Update the weight if SKU exists
+            filament.weight = weight
+
+        try:
+            db.session.commit()
+            last_scanned_sku = None
+            return jsonify({"message": "Weight updated successfully"}), 200
+        except IntegrityError:
+            db.session.rollback()
+            return jsonify({"error": "Failed to update weight"}), 500
+    else:
+        return jsonify({"error": "No SKU scanned"}), 400

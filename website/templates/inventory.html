@@ -1,43 +1,71 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Inventory</h1>
+<div class="container my-4">
+    <h1 class="mb-4">Inventory Management</h1>
 
-<!-- QR Code Reader Container -->
-<div id="reader" style="width: 400px;"></div>
+    <!-- Input for Weight -->
+    <div class="mb-3">
+        <label for="weightInput" class="form-label">Weight (g)</label>
+        <input type="number" class="form-control" id="weightInput" placeholder="Enter weight">
+        <button class="btn btn-success mt-2" onclick="submitWeight()">Submit Weight</button>
+    </div>
 
-<script>
-    function onScanSuccess(decodedText, decodedResult) {
-        console.log(`Code matched = ${decodedText}`, decodedResult);
-        sendToServer(decodedText); // Send the decoded text to the server
+    <!-- Camera Feed Container -->
+    <div class="d-flex flex-column align-items-center">
+        <div class="mb-3">
+            <button class="btn btn-primary me-2" onclick="startCamera()">Start Camera</button>
+            <button class="btn btn-danger" onclick="stopCamera()">Stop Camera</button>
+        </div>
+        <img id="camera-feed" class="img-fluid rounded" style="max-width: 100%; height: auto; display: none;"/>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function startCamera() {
+        var feed = document.getElementById('camera-feed');
+        feed.style.display = 'block';
+        fetch('{{ url_for("views.start_camera") }}')
+            .then(function(response) {
+                if (response.ok) {
+                    feed.src = "{{ url_for('views.video_feed') }}";
+                } else {
+                    console.error('Failed to start the camera');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error:', error);
+            });
     }
 
-    function onScanFailure(error) {
-        console.warn(`Code scan error = ${error}`);
+    function stopCamera() {
+        var feed = document.getElementById('camera-feed');
+        feed.style.display = 'none';
+        feed.src = '';
+        fetch('{{ url_for("views.stop_camera") }}');
     }
 
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader",
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        /* verbose= */ false
-    );
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-
-    function sendToServer(decodedText) {
-        fetch('/handle-qr-code', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ qrCode: decodedText })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+    function submitWeight() {
+        const weight = document.getElementById('weightInput').value;
+        if (weight) {
+            fetch('{{ url_for("views.update_weight") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ weight: weight })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                alert('Weight updated successfully');
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        } else {
+            alert('Please enter a weight');
+        }
     }
 </script>
 {% endblock %}
