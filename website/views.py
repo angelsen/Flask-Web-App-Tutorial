@@ -6,13 +6,13 @@ import json
 from .nfc_util_NXP import get_nfc_uid_from_reader
 import cv2
 from pyzbar.pyzbar import decode
+from picamera2 import Picamera2
 from sqlalchemy.exc import IntegrityError
 
-views = Blueprint('views', __name__)
-camera_id = 0
-cap = None
-last_scanned_sku = None
 
+views = Blueprint('views', __name__)
+picam2 = None
+last_scanned_sku = None
 
 @views.route('/', methods=['GET', 'POST'])
 @login_required
@@ -70,16 +70,18 @@ def inventory():
 
 @views.route('/start_camera')
 def start_camera():
-    global cap
-    cap = cv2.VideoCapture(camera_id)
+    global picam2
+    picam2 = Picamera2()
+    picam2.configure(picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (640, 480)}))
+    picam2.start()
     return '', 204  # Return an empty response with a 204 status code
 
 @views.route('/stop_camera')
 def stop_camera():
-    global cap
-    if cap:
-        cap.release()
-        cap = None
+    global picam2
+    if picam2:
+        picam2.stop()
+        picam2 = None
     return '', 204
 
 def draw_barcode_frame(frame, barcode, text):
@@ -94,11 +96,11 @@ def draw_barcode_frame(frame, barcode, text):
 def video_feed():
     def gen_frames():
         global last_scanned_sku
-        global cap
+        global picam2
         while True:
-            if cap and cap.isOpened():
-                ret, frame = cap.read()
-                if ret:
+            if picam2:
+                frame = picam2.capture_array()
+                if frame is not None:
                     for d in decode(frame):
                         s = d.data.decode()
                         last_scanned_sku = s  # Update the last scanned SKU
@@ -106,10 +108,10 @@ def video_feed():
                     encoded_frame = cv2.imencode('.jpg', frame)[1].tobytes()
                     yield b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + encoded_frame + b'\r\n\r\n'
                 else:
-                    print('Error reading frame')
+                    print('Error capturing frame')
                     break
             else:
-                print('Exit the loop, camera is not open')
+                print('Exit the loop, camera is not started')
                 break
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
