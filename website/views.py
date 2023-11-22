@@ -17,6 +17,8 @@ last_scanned_sku = None
 @views.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
+    filament_inventory = FilamentInventory.query.all()
+
     if request.method == 'POST': 
         note = request.form.get('note')#Gets the note from the HTML 
 
@@ -28,7 +30,7 @@ def home():
             db.session.commit()
             flash('Note added!', category='success')
 
-    return render_template("home.html", user=current_user)
+    return render_template("home.html", user=current_user, filament_inventory=filament_inventory)
 
 
 @views.route('/delete-note', methods=['POST'])

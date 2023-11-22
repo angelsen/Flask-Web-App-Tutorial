@@ -11,11 +11,31 @@
   </li>
   {% endfor %}
 </ul>
+<hr>
+<h1 align="center">Filament Inventory</h1>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>SKU</th>
+            <th>Weight (grams)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in filament_inventory %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.sku }}</td>
+            <td>{{ item.weight }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 <form method="POST">
-  <textarea name="note" id="note" class="form-control"></textarea>
-  <br />
-  <div align="center">
-    <button type="submit" class="btn btn-primary">Add Note</button>
-  </div>
+    <textarea name="note" id="note" class="form-control"></textarea>
+    <br />
+    <div align="center">
+        <button type="submit" class="btn btn-primary">Add Note</button>
+    </div>
 </form>
 {% endblock %}
