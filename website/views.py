@@ -106,6 +106,9 @@ def video_feed():
                     # Rotate the frame 90 degrees clockwise
                     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
+                    # Flip the frame horizontally (0: vertical, 1: horizontal, -1: both axes)
+                    frame = cv2.flip(frame, 1)
+
                     for d in decode(frame):
                         s = d.data.decode()
                         last_scanned_sku = s  # Update the last scanned SKU
