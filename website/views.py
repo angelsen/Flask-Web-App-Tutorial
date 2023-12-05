@@ -74,10 +74,7 @@ def inventory():
 def start_camera():
     global picam2
     if picam2 is not None:
-        # Check if the camera is already started
-        # If not, start the camera
-        if not picam2.is_started():
-            picam2.start()
+        picam2.start()            
     else:
         # Initialize the camera if it's not created yet
         picam2 = Picamera2()
@@ -88,8 +85,7 @@ def start_camera():
 @views.route('/stop_camera')
 def stop_camera():
     global picam2
-    if picam2 is not None and picam2.is_started():
-        # Stop the camera if it is started
+    if picam2 is not None:
         picam2.stop()
     return '', 204
 
