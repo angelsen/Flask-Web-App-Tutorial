@@ -103,10 +103,14 @@ def video_feed():
             if picam2:
                 frame = picam2.capture_array()
                 if frame is not None:
+                    # Rotate the frame 90 degrees clockwise
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+
                     for d in decode(frame):
                         s = d.data.decode()
                         last_scanned_sku = s  # Update the last scanned SKU
                         frame = draw_barcode_frame(frame, d, s)
+                    
                     encoded_frame = cv2.imencode('.jpg', frame)[1].tobytes()
                     yield b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + encoded_frame + b'\r\n\r\n'
                 else:
@@ -115,6 +119,7 @@ def video_feed():
             else:
                 print('Exit the loop, camera is not started')
                 break
+
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @views.route('/update_weight', methods=['POST'])
