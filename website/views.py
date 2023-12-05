@@ -73,17 +73,24 @@ def inventory():
 @views.route('/start_camera')
 def start_camera():
     global picam2
-    picam2 = Picamera2()
-    picam2.configure(picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (640, 480)}))
-    picam2.start()
+    if picam2 is not None:
+        # Check if the camera is already started
+        # If not, start the camera
+        if not picam2.is_started():
+            picam2.start()
+    else:
+        # Initialize the camera if it's not created yet
+        picam2 = Picamera2()
+        picam2.configure(picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (640, 480)}))
+        picam2.start()
     return '', 204  # Return an empty response with a 204 status code
 
 @views.route('/stop_camera')
 def stop_camera():
     global picam2
-    if picam2:
+    if picam2 is not None and picam2.is_started():
+        # Stop the camera if it is started
         picam2.stop()
-        picam2 = None
     return '', 204
 
 def draw_barcode_frame(frame, barcode, text):
