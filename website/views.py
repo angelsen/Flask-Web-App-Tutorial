@@ -104,7 +104,7 @@ def video_feed():
                 frame = picam2.capture_array()
                 if frame is not None:
                     # Rotate the frame 90 degrees clockwise
-                    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
                     for d in decode(frame):
                         s = d.data.decode()
